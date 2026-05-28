@@ -1,0 +1,30 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd ~
+            if [ -d "ci-cd-project" ]; then
+              cd ci-cd-project && git pull
+            else
+              git clone https://github.com/RAJATRAJPUT89-cmd/devops-ec2-project.git ci-cd-project
+              cd ci-cd-project
+            fi
+
+            docker build -t myapp .
+            docker stop myapp || true
+            docker rm myapp || true
+            docker run -d -p 80:80 --name myapp myapp
